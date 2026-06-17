@@ -1,4 +1,6 @@
 import 'package:ecommerce_app_api_26/features/auth/presentation/screens/login_screen.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 
 class SignupScreen extends StatefulWidget {
@@ -22,12 +24,22 @@ class _SignupScreenState extends State<SignupScreen> {
     super.dispose();
   }
 
-  void _signup() {
+  void _signup() async{
     if (_formKey.currentState!.validate()) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Signed up')),
-      );
-      Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_)=> LoginScreen()));
+      UserCredential userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(email: _emailController.text, password: _passwordController.text);
+
+      if(userCredential.user != null){
+        FirebaseAuth.instance.currentUser?.sendEmailVerification();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Signed up')),
+        );
+        Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_)=> LoginScreen()));
+      }
+      else{
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Signed up Failed')),
+        );
+      }
     }
   }
 

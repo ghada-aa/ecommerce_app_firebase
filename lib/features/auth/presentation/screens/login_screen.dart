@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:ecommerce_app_api_26/features/auth/presentation/screens/signup_screen.dart';
 import 'package:ecommerce_app_api_26/features/main_wrapper/presentation/screens/main_wrapper.dart';
@@ -21,12 +22,31 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  void _login() {
+  void _login() async {
     if (_formKey.currentState!.validate()) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const MainWrapper()),
-      );
+      UserCredential userCredential = await FirebaseAuth.instance
+          .signInWithEmailAndPassword(
+            email: _emailController.text,
+            password: _passwordController.text,
+          );
+      if (userCredential.user != null && FirebaseAuth.instance.currentUser!.emailVerified) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const MainWrapper()),
+        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text("logged in")));
+      }else if(!( FirebaseAuth.instance.currentUser!.emailVerified)){
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text("please verify your email")));
+      }
+      else {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text("logged in failed")));
+      }
     }
   }
 
@@ -48,7 +68,9 @@ class _LoginScreenState extends State<LoginScreen> {
             padding: const EdgeInsets.all(24.0),
             child: Card(
               elevation: 8,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
               child: Padding(
                 padding: const EdgeInsets.all(24.0),
                 child: Form(
@@ -75,7 +97,9 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         ),
                         validator: (value) {
-                          if (value == null || value.isEmpty || !value.contains('@')) {
+                          if (value == null ||
+                              value.isEmpty ||
+                              !value.contains('@')) {
                             return 'Please enter a valid email';
                           }
                           return null;
@@ -112,7 +136,10 @@ class _LoginScreenState extends State<LoginScreen> {
                               borderRadius: BorderRadius.circular(12),
                             ),
                           ),
-                          child: const Text('Login', style: TextStyle(fontSize: 18)),
+                          child: const Text(
+                            'Login',
+                            style: TextStyle(fontSize: 18),
+                          ),
                         ),
                       ),
                       const SizedBox(height: 16),
@@ -120,7 +147,9 @@ class _LoginScreenState extends State<LoginScreen> {
                         onPressed: () {
                           Navigator.push(
                             context,
-                            MaterialPageRoute(builder: (context) => const SignupScreen()),
+                            MaterialPageRoute(
+                              builder: (context) => const SignupScreen(),
+                            ),
                           );
                         },
                         child: const Text(
