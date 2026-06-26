@@ -1,8 +1,27 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:ecommerce_app_api_26/features/home/presentation/widgets/product_card.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  late CollectionReference<Map<String, dynamic>> collectionReference;
+
+  @override
+  void initState() {
+    getProducts();
+    // TODO: implement initState
+    super.initState();
+  }
+
+  void getProducts() {
+    collectionReference = FirebaseFirestore.instance.collection("products");
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -16,8 +35,49 @@ class HomeScreen extends StatelessWidget {
         'image': 'https://via.placeholder.com/150',
       },
     );
-
+    TextEditingController _nameController = TextEditingController(),
+        _descriptionController = TextEditingController(),
+        _priceController = TextEditingController(),
+        _imageUrlController = TextEditingController();
     return Scaffold(
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          showDialog(
+              context: context,
+              builder: (context) => AlertDialog(
+                  content: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    spacing: 10,
+                    children: [
+                    TextField(
+                    controller: _nameController,
+                    decoration: InputDecoration(labelText: 'Name'),
+                  ),
+                  TextField(
+                    controller: _descriptionController,
+                    decoration: InputDecoration(labelText: 'Description'),
+                  ),
+                  TextField(
+                    controller: _priceController,
+                    decoration: InputDecoration(labelText: 'Price'),
+                  ),
+                  TextField(
+                    controller: _imageUrlController,
+                    decoration: InputDecoration(labelText: 'Image Url'),
+                  ),
+                  ElevatedButton(onPressed: () async {
+                    print('adddddddddddddddddddd');
+                    await collectionReference.add({
+                      'name' : _nameController.text,
+                      'price' : double.parse(_priceController.text),
+                      'describtion' : _descriptionController.text,
+                      'image_url' : _imageUrlController.text
+                    });
+                    Navigator.of(context).pop();
+                    print('doneeeeeeeeeeee');
+                  }, child: Text("Add Product"))])));},
+        child: Icon(Icons.add),
+      ),
       backgroundColor: Colors.grey.shade50,
       appBar: AppBar(
         backgroundColor: Colors.white,
@@ -29,8 +89,18 @@ class HomeScreen extends StatelessWidget {
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Welcome,', style: TextStyle(color: Colors.grey.shade600, fontSize: 14)),
-                const Text('Our Shop', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22, color: Colors.black)),
+                Text(
+                  'Welcome,',
+                  style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
+                ),
+                const Text(
+                  'Our Shop',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 22,
+                    color: Colors.black,
+                  ),
+                ),
               ],
             ),
             Container(
@@ -62,7 +132,7 @@ class HomeScreen extends StatelessWidget {
                       color: Colors.black.withOpacity(0.05),
                       blurRadius: 10,
                       offset: const Offset(0, 5),
-                    )
+                    ),
                   ],
                 ),
                 child: const TextField(
@@ -83,7 +153,10 @@ class HomeScreen extends StatelessWidget {
                   bool isAll = cat == 'All';
                   return Container(
                     margin: const EdgeInsets.only(right: 12),
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 10,
+                    ),
                     decoration: BoxDecoration(
                       color: isAll ? Colors.blue : Colors.white,
                       borderRadius: BorderRadius.circular(12),
@@ -92,7 +165,7 @@ class HomeScreen extends StatelessWidget {
                           BoxShadow(
                             color: Colors.black.withOpacity(0.05),
                             blurRadius: 5,
-                          )
+                          ),
                       ],
                     ),
                     child: Text(
@@ -109,23 +182,32 @@ class HomeScreen extends StatelessWidget {
             // Products Grid
             Padding(
               padding: const EdgeInsets.all(16.0),
-              child: GridView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  childAspectRatio: 0.7,
-                  crossAxisSpacing: 16,
-                  mainAxisSpacing: 16,
-                ),
-                itemCount: dummyProducts.length,
-                itemBuilder: (context, index) {
-                  final product = dummyProducts[index];
-                  return ProductCard(
-                    title: product['title'],
-                    price: product['price'],
-                    description: product['description'],
-                    image: product['image'],
+              child: FutureBuilder(
+                future: collectionReference.get(),
+                builder: (context, asyncSnapshot) {
+                  if (!asyncSnapshot.hasData) {
+                    return Center(child: CircularProgressIndicator());
+                  }
+                  return GridView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          childAspectRatio: 0.7,
+                          crossAxisSpacing: 16,
+                          mainAxisSpacing: 16,
+                        ),
+                    itemCount: asyncSnapshot.data!.docs.length,
+                    itemBuilder: (context, index) {
+                      final product = asyncSnapshot.data!.docs[index].data();
+                      return ProductCard(
+                        title: product['name'],
+                        price: product['price'],
+                        description: product['describtion'],
+                        image: product['image_url'],
+                      );
+                    },
                   );
                 },
               ),
